@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>羽球雙打分組系統（多人同步版）</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+      background: #f0f2f7;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+      color: #1a73e8;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      background: #1a73e8;
+      color: white;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 6px;
+      transition: 0.2s;
+    }
+
+    .button:hover {
+      background: #155ec2;
+      transform: translateY(-2px);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      outline: none;
+      border: 1px solid #ccc;
+      margin-bottom: 12px;
+      transition: 0.2s;
+      background: #fafafa;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #1a73e8;
+      background: #fff;
+    }
+
+    .team-box {
+      padding: 14px;
+      background: #e9f0ff;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border-left: 4px solid #1a73e8;
+    }
+
+    .court {
+      padding: 14px;
+      background: #fff7e6;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ffb300;
+    }
+  </style>
+</head>
+<body>
+
+<h1>羽球雙打分組（多人即時同步）</h1>
+
+<div class="card">
+  <h2>✨ 建立或加入房間</h2>
+  <input id="roomCodeInput" placeholder="輸入房間代碼 或 建立新房間" />
+  <button class="button" onclick="createRoom()">建立房間</button>
+  <button class="button" onclick="joinRoom()">加入房間</button>
+</div>
+
+<div class="card">
+  <h2>⚙️ 設定</h2>
+  <label>場地數：</label>
+  <input id="courtCount" type="number" min="1" value="2" />
+
+  <label>選手清單（每行一人）：</label>
+  <textarea id="playerList" rows="6"></textarea>
+
+  <button class="button" onclick="createTeams()">兩兩分組</button>
+  <button class="button" onclick="skipPairing()">跳過分組</button>
+</div>
+
+<div class="card">
+  <h2>👥 目前組別</h2>
+  <div id="teamDisplay"></div>
+</div>
+
+<div class="card">
+  <h2>🏸 場上比賽</h2>
+  <div id="courtDisplay"></div>
+</div>
+
+<div class="card">
+  <h2>🎛️ 控制</h2>
+  <button class="button" onclick="nextRound()">換下一組</button>
+  <button class="button" onclick="shuffleAll()">重抽全部組合</button>
+</div>
+
+<script>
+// ---------------------------
+// Firebase 初始化
+// ---------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyD21R1yQ2yf2xFRsP63E7odCAH_0o14exw",
+  authDomain: "badminton-scheduler-site.firebaseapp.com",
+  databaseURL: "https://badminton-scheduler-site-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "badminton-scheduler-site",
+  storageBucket: "badminton-scheduler-site.firebasestorage.app",
+  messagingSenderId: "520644414832",
+  appId: "1:520644414832:web:cd836fb6454ade5d3093b5",
+  measurementId: "G-B7SQTFL659"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let roomCode = "";
+let players = [];
+let teams = [];
+let matchQueue = [];
+let courtCount = 2;
+
+// ---------------------------
+// 房間功能
+// ---------------------------
+function createRoom() {
+  roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+  alert("房間建立成功！代碼：" + roomCode);
+  db.ref("rooms/" + roomCode).set({});
+}
+
+function joinRoom() {
+  const code = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+  if (!code) return alert("請輸入房間代碼！");
+  roomCode = code;
+  alert("已加入房間：" + roomCode);
+
+  // 房間同步監聽
+  db.ref("rooms/" + roomCode).on("value", snap => {
+    const data = snap.val();
+    if (!data) return;
+    teams = data.teams || [];
+    matchQueue = data.queue || [];
+    courtCount = data.courts || 2;
+
+    renderTeams();
+    renderCourts();
+  });
+}
+
+// ---------------------------
+// 分組產生
+// ---------------------------
+function saveRoomState() {
+  if (!roomCode) return;
+  db.ref("rooms/" + roomCode).update({
+    teams,
+    queue: matchQueue,
+    courts: courtCount
+  });
+}
+
+function createTeams() {
+  const input = document.getElementById("playerList").value.trim();
+  // 修正：使用正確的正規表達式分行
+  players = input.split(/\n+/).map(x => x.trim()).filter(x => x);
+  courtCount = parseInt(document.getElementById("courtCount").value) || 1;
+
+  players = players.sort(() => Math.random() - 0.5);
+  teams = [];
+
+  for (let i = 0; i < players.length; i += 2) {
+    teams.push([players[i], players[i + 1] || "(空)"]);
+  }
+
+  matchQueue = [...teams];
+  renderTeams();
+  renderCourts();
+  saveRoomState();
+}
+
+function skipPairing() {
+  const input = document.getElementById("playerList").value.trim();
+  // 修正：使用正確的正規表達式分行
+  players = input.split(/\n+/).map(x => x.trim()).filter(x => x);
+
+  teams = players.map(p => [p]);
+  matchQueue = [...teams];
+  renderTeams();
+  renderCourts();
+  saveRoomState();
+}
+
+// ---------------------------
+// UI 渲染
+// ---------------------------
+function renderTeams() {
+  const box = document.getElementById("teamDisplay");
+  box.innerHTML = "";
+  teams.forEach((t,i)=>{
+    const div = document.createElement("div");
+    div.className = "team-box";
+    div.innerText = `組 ${i+1}: ${t.join("、")}`;
+    box.appendChild(div);
+  });
+}
+
+function renderCourts() {
+  const box = document.getElementById("courtDisplay");
+  box.innerHTML = "";
+
+  for (let i=0; i<courtCount; i++) {
+    const div = document.createElement("div");
+    div.className = "court";
+
+    const team = matchQueue[i] ? matchQueue[i].join("、") : "(空場)";
+
+    div.innerHTML = `
+      <strong>場地 ${i+1}</strong>：${team}<br>
+      <button class='button' onclick="recordResult(${i})">紀錄勝負並換組</button>
+    `;
+
+    box.appendChild(div);
+  }
+}
+
+function recordResult(i){
+  nextRound();
+}
+
+// ---------------------------
+// 控制功能
+// ---------------------------
+function nextRound(){
+  matchQueue.push(matchQueue.shift());
+  renderCourts();
+  saveRoomState();
+}
+
+function shuffleAll() {
+  teams = teams.sort(() => Math.random() - 0.5);
+  matchQueue = [...teams];
+  renderTeams();
+  renderCourts();
+  saveRoomState();
+}
+</script>
+
+</body>
+</html>
