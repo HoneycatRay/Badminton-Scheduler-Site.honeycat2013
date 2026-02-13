@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-T3BHG38L');</script>
+<!-- End Google Tag Manager -->
+  <base target="_top">
+  <title>羽球分組管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2E7D32; /* Green */
+      --secondary: #1565C0; /* Blue */
+      --accent: #F9A825; /* Yellow */
+      --bg: #f4f6f8;
+      --text: #333;
+      --white: #ffffff;
+      --danger: #d32f2f;
+      --timer-bg: #263238;
+      --dynamic-size: 18px;
+    }
+    
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+      background-color: var(--bg); color: var(--text);
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex; flex-direction: column;
+    }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .center { justify-content: center; align-items: center; }
+    .w-full { width: 100%; }
+    .container { max-width: 800px; margin: 0 auto; padding: 15px; width: 100%; box-sizing: border-box;}
+    
+    .dynamic-text { font-size: var(--dynamic-size); transition: font-size 0.2s; }
+    .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px; vertical-align: middle; }
+    .badge-pub { background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2; }
+    .badge-pri { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+
+    /* Controls */
+    button {
+      background-color: var(--primary); color: white; border: none;
+      padding: 12px 15px; border-radius: 8px; font-size: 1rem;
+      cursor: pointer; margin: 5px; touch-action: manipulation;
+    }
+    button:active { opacity: 0.8; }
+    button.secondary { background-color: var(--secondary); }
+    button.danger { background-color: var(--danger); }
+    button.outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    button.small { padding: 5px 10px; font-size: 0.8rem; margin: 2px; }
+    
+    /* Input Styling */
+    input, textarea, select {
+      padding: 12px; border: 1px solid #ccc; border-radius: 6px;
+      font-size: 1rem; width: 100%; box-sizing: border-box;
+      margin-bottom: 10px; font-family: inherit;
+    }
+
+    .checkbox-row {
+      display: flex; align-items: center; margin-bottom: 8px; padding: 8px;
+      background: #fff; border: 1px solid #eee; border-radius: 6px;
+    }
+    .checkbox-row input { width: auto; margin-right: 10px; transform: scale(1.2); margin-bottom: 0; }
+    .checkbox-row label { flex: 1; cursor: pointer; user-select: none; }
+    .sub-option { margin-left: 25px; font-size: 0.9rem; border-left: 3px solid #ddd; padding-left: 10px; margin-top:5px;}
+
+    /* Cards */
+    .card {
+      background: var(--white); border-radius: 12px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px;
+    }
+
+    /* Screen Wrapper */
+    .full-screen-center {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: flex-start; align-items: center; width: 100%; min-height: 100vh;
+      overflow-y: auto; padding-top: 40px;
+    }
+
+    /* Overlay */
+    #loading-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(255,255,255,0.95); z-index: 999;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 1.5rem; color: var(--primary); font-weight: bold;
+    }
+
+    /* Header */
+    .header-bar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--primary); color: white;
+      padding: 10px; display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Tabs */
+    .tabs { display: flex; overflow-x: auto; background: white; border-bottom: 1px solid #ddd; }
+    .tab-btn {
+      flex: 1; padding: 15px; text-align: center; cursor: pointer;
+      border-bottom: 3px solid transparent; color: #666; font-weight: bold; white-space: nowrap;
+    }
+    .tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); }
+
+    /* Alert Banner */
+    .alert-banner {
+      background-color: var(--danger); color: white;
+      text-align: center; padding: 15px; font-weight: bold;
+      animation: pulse 2s infinite; cursor: pointer;
+      margin: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.9; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+
+    /* Court Styling */
+    .court-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+    .court-card { border: 2px solid #eee; position: relative; }
+    .court-card.playing { border-color: var(--accent); background-color: #fffde7; }
+    .court-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: #555; align-items: center;}
+    .matchup .dynamic-text {
+      font-size: calc(var(--dynamic-size) * 1.5) !important; 
+      font-weight: 800;
+      
+      /* 關鍵修改：改為 block 並設為 100% 寬，確保文字能置中 */
+      display: block;
+      width: 100%;
+      text-align: center;
+      
+      line-height: 1.4;
+      margin: 5px 0;
+    }
+  .vs { 
+      display: block;       /* 讓它佔據整行 */
+      width: 100%;          /* 寬度撐滿 */
+      text-align: center;   /* 文字置中 */
+      
+      color: #888;          /* 保持原本顏色 */
+      font-size: 0.8em;     /* 保持原本大小 (較小字體) */
+      margin: 5px 0;        /* 上下保持一點距離 */
+    }
+    /* === 新增：讓 & 符號也能獨立置中 === */
+    .ampersand {
+      display: block;       /* 讓它佔據整行 */
+      width: 100%;          /* 寬度撐滿 */
+      text-align: center;   /* 文字置中 */
+      color: #999;          /* 顏色 (灰色) */
+      font-weight: normal;  /* 不加粗 */
+      margin: 2px 0;        /* 上下微調距離 */
+    }
+    .score-board { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px;}
+    .score-box { font-size: 1.5em; width: 50px; text-align: center; border: 1px solid #ddd; background: white; padding: 5px; }
+    
+    /* Timer Styles */
+    .timer-display {
+      background-color: var(--timer-bg); color: #fff;
+      padding: 2px 8px; border-radius: 10px; font-family: monospace;
+      font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+      border: 2px solid transparent;
+    }
+    
+    /* Lobby */
+    .lobby-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+    
+    /* Player List Styling */
+    .player-list-item { 
+      padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+    }
+    .player-number {
+      background: var(--secondary); color: white;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; justify-content: center; align-items: center;
+      margin-right: 12px; font-size: 1em; 
+      font-weight: bold;
+    }
+    .player-name {
+      font-size: 1em; 
+      font-weight: bold;
+      color: #333;
+    }
+    /* 上場次數標籤 */
+    .play-count-badge {
+      font-size: 0.8em; color: #1565C0; background: #e3f2fd; 
+      padding: 3px 8px; border-radius: 10px; font-weight: bold;
+    }
+
+    .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8rem; cursor: pointer; margin-top: auto; }
+    .sync-status { position: fixed; bottom: 10px; right: 10px; font-size: 0.75rem; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 15px; pointer-events: none; z-index: 900; }
+ /* === 終極版：滑桿樣式 (無邊框、強陰影、淺綠色) === */
+
+    /* 1. 主體設定：清除所有預設邊框與外框 */
+    input[type=range] {
+      -webkit-appearance: none; /* 移除預設外觀 */
+      width: 100%;
+      background: transparent;
+      margin: 10px 0;
+      
+      /* 關鍵：移除外框與邊框 */
+      border: 0 !important;
+      outline: none !important;
+    }
+
+    /* 2. 點擊時也不要有外框 */
+    input[type=range]:focus {
+      outline: none !important;
+      border: 0 !important;
+    }
+
+    /* 3. 軌道 (線條) */
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      cursor: pointer;
+      border: 0 !important; /* 確保軌道沒邊框 */
+    }
+
+    /* 4. 滑塊 (圓點) - Chrome/Safari/Edge */
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      
+      /* 確保圓點無邊框 */
+      border: 0 !important;
+      outline: none !important;
+      
+      height: 22px;             /* 大小 */
+      width: 22px;
+      border-radius: 50%;
+      background: #66BB6A;      /* 淺綠色 */
+      cursor: pointer;
+      margin-top: -9px;         /* 垂直置中修正 (22-4)/2 * -1 */
+      
+      /* 強陰影：讓圓點浮起來，且邊緣模糊，看起來才不會像邊框 */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
+    }
+
+    /* 5. 滑塊 (圓點) - Firefox */
+    input[type=range]::-moz-range-track {
+      width: 100%;
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      border: 0 !important;
+    }
+    input[type=range]::-moz-range-thumb {
+      border: none !important;  /* Firefox 專用移除邊框 */
+      outline: none !important;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #66BB6A;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T3BHG38L"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+  <div id="loading-overlay" class="hidden">載入中...</div>
+  <div id="sync-status" class="sync-status">準備就緒</div>
+
+  <div id="page-home" class="full-screen-center">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 style="color: var(--primary);"><i class="fa-solid fa-feather"></i> 羽球線上分組系統 Pro</h1>
+    </div>
+    <div class="card" style="width: 90%; max-width: 400px;">
+      <h3>建立或加入房間</h3>
+      <input type="text" id="room-code-input" placeholder="請輸入房間代碼 (例如: 貓狗羽球團)" style="text-transform: uppercase;">
+      <button onclick="handleEnterRoom()" class="w-full">建立／進入房間</button>
+    </div>
+    
+    <div class="card" style="width: 90%; max-width: 400px; padding:0;">
+       <div style="padding:15px; border-bottom:1px solid #eee; background:#fafafa; border-radius:12px 12px 0 0;">
+         <h3 style="margin:0;">🌐 公開房間大廳</h3>
+       </div>
+       <div id="lobby-list" style="max-height:200px; overflow-y:auto;">
+          <div style="padding:20px; text-align:center; color:#999">載入中...</div>
+       </div>
+       <div style="padding:10px; text-align:center;">
+         <button class="outline small" onclick="loadLobby()">重新整理</button>
+       </div>
+    </div>
+  </div>
+
+  <div id="page-setup" class="container hidden" style="margin-top: 20px;">
+    <h2>初始化設定</h2>
+    <div class="card">
+      <div class="checkbox-row" style="background:#e3f2fd; border-color:#90caf9;">
+         <input type="checkbox" id="setup-is-public" onchange="warnPublic(this)">
+         <label for="setup-is-public"><b>設為公開房間</b> (顯示於首頁大廳)</label>
+      </div>
+
+      <div class="checkbox-row">
+         <input type="checkbox" id="setup-pass-enabled" checked onchange="toggleSetupPass(this.checked)">
+         <label for="setup-pass-enabled">啟用管理密碼</label>
+      </div>
+      
+      <div id="setup-pass-container">
+        <input type="password" id="setup-password" placeholder="請設定管理密碼" style="margin-bottom:10px;">
+        <div style="margin-bottom: 10px;">
+          <label style="font-size:0.9rem; font-weight:bold; color:#555;">需要密碼的操作：</label>
+          <div class="checkbox-row sub-option"><input type="checkbox" id="setup-scope-reshuffle" checked><label>重新排序</label></div>
+          <div class="checkbox-row sub-option"><input type="checkbox" id="setup-scope-settings" checked><label>開啟設定</label></div>
+          <div class="checkbox-row sub-option"><input type="checkbox" id="setup-scope-close" checked><label>關閉房間</label></div>
+        </div>
+      </div>
+      
+      <hr style="margin: 15px 0; border:0; border-top:1px solid #eee;">
+
+      <label><b>球員名單 (一行一個)</b></label>
+      <textarea id="setup-players" rows="6" placeholder="Bill&#10;Sue&#10;Ray&#10;Mitter&#10;Cage&#10;..."></textarea>
+      
+      <label><b>模式</b></label>
+      <select id="setup-mode">
+        <option value="doubles">雙打 (2 vs 2)</option>
+        <option value="singles">單打 (1 vs 1)</option>
+      </select>
+
+      <label><b>場地數量: <span id="setup-court-val">2</span></b></label>
+      <input type="range" min="1" max="10" value="2" oninput="document.getElementById('setup-court-val').innerText=this.value" id="setup-courts">
+
+      <div style="margin-top: 15px;">
+        <label><b>進階設定</b></label>
+        <div class="checkbox-row"><input type="checkbox" id="setup-record-stats" checked><label>紀錄勝負</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="setup-scoring"><label>開啟計分</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="setup-timer" checked><label>開啟計時器</label></div>
+      </div>
+
+      <br>
+      <button onclick="submitSetup()" class="w-full">建立並開始</button>
+      <button onclick="resetToHome()" class="w-full outline">返回首頁</button>
+    </div>
+  </div>
+
+  <div id="page-main" class="hidden w-full">
+    
+    <div class="header-bar">
+      <div style="display:flex; flex-direction:column;">
+        <div style="display:flex; align-items:center;">
+           <span style="font-size:0.8rem; margin-right:5px;"><i class="fa-solid fa-house"></i>房間</span>
+           <span id="room-badge" class="badge badge-pri">私人</span>
+        </div>
+        <strong id="display-room-code" style="font-size: 1.1rem;">---</strong>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <span style="font-size:0.6rem;">字體大小</span>
+          <input type="range" min="10" max="35" value="16" class="size-slider" oninput="adjustTextSize(this.value)">
+        </div>
+        <button onclick="promptAction('reshuffle')" style="padding: 5px 8px; font-size:0.8rem;">🔄 重排</button>
+        <button onclick="promptAction('close')" style="padding: 5px 8px; font-size:0.8rem; background:var(--danger);">✕ 關閉</button>
+      </div>
+    </div>
+
+    <div id="round-over-banner" class="alert-banner hidden" onclick="promptAction('reshuffle')">
+      🏁 本輪結束，請重新排序 🏁
+    </div>
+
+    <div class="tabs">
+      <div class="tab-btn active" onclick="switchTab('courts')"><i class="fa-solid fa-feather"></i>比賽場地</div>
+      <div class="tab-btn" onclick="switchTab('status')">👥球員</div>
+      <div class="tab-btn" onclick="switchTab('settings')">⚙️ 設定</div>
+      <div class="tab-btn" onclick="switchTab('history')">🏆 紀錄</div>
+    </div>
+
+    <div id="tab-courts" class="container">
+      <div id="courts-container" class="court-grid"></div>
+    </div>
+
+    <div id="tab-status" class="container hidden">
+      <h3>等待上場</h3>
+      <div id="waiting-list" class="card"></div>
+      <h3>場上球員</h3>
+      <div id="playing-list" class="card"></div>
+      <h3>所有球員</h3>
+      <div id="all-players-list" class="card"></div>
+    </div>
+
+    <div id="tab-settings" class="container hidden">
+      <div class="card">
+        <h3>管理員設定 (需密碼)</h3>
+        <button onclick="tryUnlockSettings()" id="btn-unlock-settings" class="w-full">開啟設定面板</button>
+        
+        <div id="settings-panel" class="hidden">
+           
+           <div class="checkbox-row" style="background:#e3f2fd; margin-bottom:15px;">
+             <input type="checkbox" id="setting-public-toggle" onchange="togglePublicSetting(this.checked)">
+             <label><b>設為公開房間</b></label>
+           </div>
+           
+           <h4>球員管理</h4>
+           <div class="flex">
+             <input type="text" id="new-player-name" placeholder="新球員名字">
+             <button onclick="addPlayer()">+</button>
+           </div>
+           <div id="manage-player-list" style="max-height: 200px; overflow-y:scroll; border:1px solid #eee; padding:5px;"></div>
+           
+           <h4>規則設定</h4>
+           <div class="checkbox-row"><input type="checkbox" id="setting-record-stats-toggle" onchange="updateSetting('recordStats', this.checked)"><label>紀錄勝負</label></div>
+           <div class="checkbox-row"><input type="checkbox" id="setting-scoring-toggle" onchange="updateSetting('scoring', this.checked)"><label>開啟計分</label></div>
+           <div class="checkbox-row"><input type="checkbox" id="setting-timer-toggle" onchange="updateSetting('timerEnabled', this.checked)"><label>開啟計時器</label></div>
+
+           <h4>密碼權限</h4>
+           <div class="checkbox-row"><input type="checkbox" id="setting-pass-enabled" onchange="updatePassSettings()"><label>啟用密碼</label></div>
+           <div style="margin-left:10px; font-size:0.9rem;">
+             <div class="checkbox-row sub-option"><input type="checkbox" id="setting-scope-reshuffle" onchange="updatePassSettings()"> 重排需密碼</div>
+             <div class="checkbox-row sub-option"><input type="checkbox" id="setting-scope-settings" onchange="updatePassSettings()"> 設定需密碼</div>
+             <div class="checkbox-row sub-option"><input type="checkbox" id="setting-scope-close" onchange="updatePassSettings()"> 關閉需密碼</div>
+           </div>
+           
+           <br>
+           <label>決勝分數: <span id="setting-score-val">21</span></label>
+           <input type="range" min="11" max="31" value="21" id="setting-win-score" onchange="updateSetting('winScore', Number(this.value))" oninput="document.getElementById('setting-score-val').innerText=this.value">
+           
+           <h4>場地模式</h4>
+           <div class="flex" style="gap:5px;">
+             <button onclick="updateSetting('mode', 'doubles')" class="outline w-full">雙打</button>
+             <button onclick="updateSetting('mode', 'singles')" class="outline w-full">單打</button>
+           </div>
+           
+           <br>
+           <label>場地數</label>
+           <input type="number" id="setting-court-count" onchange="updateSetting('courtCount', Number(this.value))">
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-history" class="container hidden">
+      <h3>比賽紀錄</h3>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <div id="page-admin-login" class="full-screen-center hidden">
+    <div class="card">
+      <h2>維護模式登入</h2>
+      <input type="text" id="admin-user" placeholder="帳號">
+      <input type="password" id="admin-pass" placeholder="密碼">
+      <button onclick="adminLogin()" class="w-full">登入</button>
+      <button onclick="resetToHome()" class="outline w-full">返回</button>
+    </div>
+  </div>
+
+  <div id="page-admin-dash" class="container hidden">
+    <h2>系統維護模式</h2>
+    <button onclick="resetToHome()" class="outline">登出</button>
+    <div id="admin-room-list" style="margin-top:15px;"></div>
+  </div>
+
+  <div class="footer" id="copyright" onclick="handleSecretClick()">
+    Copyright ©2026 Ray Wang
+  </div>
+  <script>
+    // === 1. 全域變數 ===
+    var currentRoomCode = null;
+    var localData = null;
+    var syncInterval = null;
+    var timerTicker = null; 
+    var isUpdating = false;
+    var isAdminUnlocked = false; 
+    var adminCredentials = {u:'', p:''};
+    var secretClicks = 0;
+
+    // === 2. 初始化 ===
+    window.onload = function() { loadLobby(); };
+
+    window.switchTab = function(tabName) {
+      var tabs = ['courts', 'status', 'settings', 'history'];
+      tabs.forEach(function(t) { document.getElementById('tab-' + t).classList.add('hidden'); });
+      var btns = document.querySelectorAll('.tab-btn');
+      for(var i=0; i<btns.length; i++) btns[i].classList.remove('active');
+      document.getElementById('tab-' + tabName).classList.remove('hidden');
+      if(tabName === 'courts') btns[0].classList.add('active');
+      if(tabName === 'status') btns[1].classList.add('active');
+      if(tabName === 'settings') btns[2].classList.add('active');
+      if(tabName === 'history') btns[3].classList.add('active');
+    };
+
+    window.resetToHome = function() {
+      if (syncInterval) clearInterval(syncInterval);
+      if (timerTicker) clearInterval(timerTicker);
+      syncInterval = null; timerTicker = null; currentRoomCode = null; localData = null; isAdminUnlocked = false;
+      ['page-setup', 'page-main', 'page-admin-login', 'page-admin-dash'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('page-home').classList.remove('hidden');
+      document.getElementById('room-code-input').value = '';
+      loadLobby(); 
+    };
+
+    window.showLoading = function(show) { document.getElementById('loading-overlay').classList.toggle('hidden', !show); };
+    
+    window.adjustTextSize = function(val) { 
+        document.documentElement.style.setProperty('--dynamic-size', val + 'px'); 
+        document.body.style.fontSize = val + 'px';
+    };
+
+    // === 3. 大廳與房間 (這裡包含了您原本遺失的 handleEnterRoom) ===
+    window.loadLobby = function() {
+        var listEl = document.getElementById('lobby-list');
+        listEl.innerHTML = '<div style="padding:10px; text-align:center;">載入中...</div>';
+        google.script.run.withSuccessHandler(function(rooms) {
+            if(!rooms || rooms.length === 0) { listEl.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">目前沒有公開房間</div>'; return; }
+            listEl.innerHTML = rooms.map(function(r) {
+                return '<div class="lobby-item"><div><strong>' + r.id + '</strong> <span style="font-size:0.8em">' + (r.mode==='doubles'?'雙打':'單打') + '</span><br><span style="font-size:0.8em; color:#666;">' + r.courtCount + ' 場地 / ' + r.playerCount + ' 人</span></div><button class="small secondary" onclick="joinPublic(\'' + r.id + '\')">加入</button></div>';
+            }).join('');
+        }).getPublicRooms();
+    };
+    window.joinPublic = function(id) { document.getElementById('room-code-input').value = id; handleEnterRoom(); };
+
+    // *** 這就是之前報錯缺少的函式 ***
+    window.handleEnterRoom = function() {
+      var code = document.getElementById('room-code-input').value.trim().toUpperCase();
+      if(!code) return alert('請輸入代碼');
+      showLoading(true);
+      google.script.run.withSuccessHandler(function(exists) {
+          showLoading(false);
+          currentRoomCode = code;
+          if(exists) { startApp(); } 
+          else {
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-setup').classList.remove('hidden');
+            document.getElementById('setup-pass-enabled').checked = true;
+            toggleSetupPass(true);
+          }
+      }).checkRoomExists(code);
+    };
+
+    window.warnPublic = function(checkbox) { if(checkbox.checked && !confirm("⚠️ 警告：設為【公開】後，所有人皆可在大廳看到此房間。")) checkbox.checked = false; };
+    window.toggleSetupPass = function(enabled) {
+        var c = document.getElementById('setup-pass-container');
+        c.style.opacity = enabled ? '1' : '0.4';
+        c.style.pointerEvents = enabled ? 'auto' : 'none';
+        if(!enabled) document.getElementById('setup-password').value = ''; 
+    };
+
+    window.submitSetup = function() {
+      var passEnabled = document.getElementById('setup-pass-enabled').checked;
+      var password = document.getElementById('setup-password').value;
+      if(passEnabled && !password) return alert('請設定管理密碼');
+      
+      var rawPlayers = document.getElementById('setup-players').value.split('\n').map(n=>n.trim()).filter(n=>n.length>0);
+      if(rawPlayers.length < 2) return alert('至少需要2名球員');
+
+      var players = rawPlayers.map((name, idx) => ({ id: idx + 1, name: name }));
+      var shuffled = players.map(p => p.id); 
+      var courtCount = Number(document.getElementById('setup-courts').value);
+      var courts = [];
+      for(var i=0; i<courtCount; i++) courts.push({ id: i+1, status: 'idle', players: [], scores: {t1:0, t2:0}, startTime: 0, timer: { startAt: 0, accumulated: 0, status: 'stopped' } });
+
+      var payload = {
+        roomId: currentRoomCode, password: password, status: 'active',
+        players: players, shuffledOrder: shuffled,
+        settings: {
+          isPublic: document.getElementById('setup-is-public').checked,
+          passwordEnabled: passEnabled,
+          passwordScope: {
+              reshuffle: document.getElementById('setup-scope-reshuffle').checked,
+              settings: document.getElementById('setup-scope-settings').checked,
+              closeRoom: document.getElementById('setup-scope-close').checked
+          },
+          mode: document.getElementById('setup-mode').value,
+          courtCount: courtCount,
+          recordStats: document.getElementById('setup-record-stats').checked,
+          scoring: document.getElementById('setup-scoring').checked,
+          timerEnabled: document.getElementById('setup-timer').checked,
+          winScore: 21
+        },
+        courts: courts, history: [], updatedAt: Date.now(), version: 1, nextPlayerIndex: 0
+      };
+
+      runAllocationLogic(payload); 
+      showLoading(true);
+      google.script.run.withSuccessHandler(res => {
+          if(res.success) { localData = res.data; startApp(true); } 
+          else { showLoading(false); alert(res.message); }
+      }).createNewRoomWithData(JSON.parse(JSON.stringify(payload)));
+    };
+
+    // === 4. 運作與同步 ===
+    window.startApp = function(skipFetch) {
+      document.getElementById('page-home').classList.add('hidden');
+      document.getElementById('page-setup').classList.add('hidden');
+      document.getElementById('page-main').classList.remove('hidden');
+      document.getElementById('display-room-code').innerText = currentRoomCode;
+      
+      if(skipFetch && localData) { showLoading(false); renderUI(); } else { fetchData(); }
+      
+      if(syncInterval) clearInterval(syncInterval);
+      syncInterval = setInterval(fetchData, 5000); 
+      if(timerTicker) clearInterval(timerTicker);
+      timerTicker = setInterval(updateTimerDisplays, 1000);
+    };
+
+    window.fetchData = function() {
+      if(isUpdating) return;
+      document.getElementById('sync-status').innerText = "🟡同步中...";
+      google.script.run.withSuccessHandler(res => {
+          if(res.success) {
+            localData = res.data;
+            renderUI();
+            document.getElementById('sync-status').innerText = "🟢已更新 (" + new Date().toLocaleTimeString() + ")";
+          } else { alert(res.message); resetToHome(); }
+      }).getRoomData(currentRoomCode);
+    };
+
+    window.pushUpdate = function(action, data, pwd) {
+      isUpdating = true;
+      document.getElementById('sync-status').innerText = "🔴上傳中...";
+      google.script.run.withSuccessHandler(res => {
+          isUpdating = false;
+          if(res.success) { localData = res.data; renderUI(); } 
+          else { alert("❌更新失敗: " + res.message); fetchData(); }
+      }).updateRoomData(currentRoomCode, JSON.parse(JSON.stringify(data)), localData.version, pwd || null);
+    };
+
+    // === 5. 核心邏輯區 ===
+
+    function checkAuth(scope) {
+        if (!localData.settings.passwordEnabled) return true;
+        if (!localData.settings.passwordScope[scope]) return true;
+        var pass = prompt("🔒 此操作需要管理密碼：");
+        return pass === localData.password ? pass : false;
+    }
+
+    function shuffleArray(array) {
+      for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i]; array[i] = array[j]; array[j] = temp;
+      }
+      return array;
+    }
+
+    window.promptAction = function(action) {
+      if(action === 'reshuffle') {
+        var auth = checkAuth('reshuffle');
+        if(auth === false) return alert("密碼錯誤");
+
+        var currentNames = localData.players.map(function(p){ return p.name; });
+        currentNames = shuffleArray(currentNames);
+        
+        var newData = JSON.parse(JSON.stringify(localData));
+        newData.players = currentNames.map(function(name, index) { return { id: index + 1, name: name }; });
+        newData.shuffledOrder = newData.players.map(function(p){ return p.id; });
+        newData.history = []; // 清空歷史 = 清空上場數
+        newData.nextPlayerIndex = 0;
+        newData.roundStatus = 'active';
+
+        if(confirm("確定要重排嗎？這將會：\n1. 重新分配所有球員編號\n2. 清除對戰紀錄與上場數\n3. 清空場地")) {
+           newData.courts.forEach(function(c) { 
+               c.status = 'idle'; c.players = []; c.scores={t1:0,t2:0}; c.timer={startAt:0,accumulated:0,status:'stopped'}; 
+           });
+           runAllocationLogic(newData);
+           pushUpdate('reshuffle', newData, (typeof auth === 'string' ? auth : null));
+        }
+
+      } else if (action === 'close') {
+         var auth = checkAuth('closeRoom');
+         if(auth === false) return alert("密碼錯誤");
+         if(!confirm("確定永久刪除？")) return;
+         google.script.run.withSuccessHandler(() => { alert("已刪除"); resetToHome(); }).closeRoom(currentRoomCode, (typeof auth === 'string' ? auth : null));
+      }
+    };
+
+    function getMatchSignature(playerIds, mode) {
+       var p = playerIds.slice().sort(function(a,b){return a-b}); 
+       if (mode === 'singles') return p.join('-');
+       var t1 = [playerIds[0], playerIds[1]].sort(function(a,b){return a-b}).join(',');
+       var t2 = [playerIds[2], playerIds[3]].sort(function(a,b){return a-b}).join(',');
+       return [t1, t2].sort().join('|');
+    }
+
+    window.runAllocationLogic = function(data) {
+       if (data.roundStatus === 'finished') return;
+       var req = data.settings.mode === 'doubles' ? 4 : 2;
+       var total = data.shuffledOrder.length;
+       if(total < req) return;
+
+       data.courts.forEach(function(court) {
+         if(court.status === 'idle') {
+            var next = [], idx = data.nextPlayerIndex, loops = 0;
+            while(next.length < req && loops < total * 2) {
+               var pid = data.shuffledOrder[idx % total];
+               var active = data.courts.some(c => c.players.includes(pid));
+               if(!active && !next.includes(pid)) next.push(pid);
+               idx++; loops++;
+            }
+            
+            if(next.length === req) {
+                var sig = getMatchSignature(next, data.settings.mode);
+                var isRep = data.history.some(h => {
+                     var hIds = [];
+                     if(h.players) hIds = h.players;
+                     else if(h.t1 && h.t2) hIds = h.t1.concat(h.t2);
+                     else return false;
+                     return getMatchSignature(hIds, data.settings.mode) === sig;
+                });
+
+                if(isRep) { data.roundStatus = 'finished'; return; }
+
+                court.status = 'playing'; 
+                court.players = next;
+                court.scores = {t1:0, t2:0};
+                // *** 計時器設定 ***
+                court.timer = {startAt: Date.now(), accumulated:0, status:'running'};
+                data.nextPlayerIndex = idx;
+            }
+         }
+       });
+    };
+
+    window.adjustScore = function(cid, t, d) {
+        var newData = JSON.parse(JSON.stringify(localData));
+        var c = newData.courts.find(x=>x.id===cid); 
+        if(!c) return;
+        
+        c.scores[t] = Math.max(0, c.scores[t]+d);
+        var winScore = newData.settings.winScore || 21;
+        if (c.scores[t] >= winScore) {
+            finishMatchInternal(newData, c.id, (t==='t1'?'t1':'t2'));
+        } else {
+            pushUpdate('score', newData);
+        }
+    };
+
+    function finishMatchInternal(data, cid, winner) {
+        var c = data.courts.find(x=>x.id===cid);
+        // 計算持續時間
+        var totalMs = c.timer ? (c.timer.accumulated + (c.timer.status==='running' ? (Date.now()-c.timer.startAt) : 0)) : 0;
+        var sec = Math.floor(Math.max(0, totalMs)/1000);
+        
+        data.history.push({
+            time: Date.now(),
+            t1: data.settings.mode==='doubles'?[c.players[0],c.players[1]]:[c.players[0]],
+            t2: data.settings.mode==='doubles'?[c.players[2],c.players[3]]:[c.players[1]],
+            players: c.players,
+            winner: winner,
+            scoreStr: c.scores.t1 + ' - ' + c.scores.t2,
+            durationStr: Math.floor(sec/60) + "m " + (sec%60) + "s"
+        });
+        
+        c.status = 'idle'; c.players = []; c.scores = {t1:0,t2:0}; c.timer = {startAt:0,accumulated:0,status:'stopped'};
+        runAllocationLogic(data);
+        pushUpdate('finish', data);
+    }
+
+    window.finishMatch = function(cid, winner) {
+        var c = localData.courts.find(x=>x.id===cid);
+        // 防呆: 時間太短提示
+        var totalMs = c.timer ? (c.timer.accumulated + (c.timer.status==='running' ? (Date.now()-c.timer.startAt) : 0)) : 0;
+        if(totalMs < 5000 && !confirm("比賽時間很短，確定結束嗎？")) return;
+        var newData = JSON.parse(JSON.stringify(localData));
+        finishMatchInternal(newData, cid, winner);
+    };
+
+    function calculateMatchCounts() {
+        var counts = {};
+        if (!localData || !localData.players) return counts;
+        localData.players.forEach(function(p) { counts[p.id] = 0; });
+        if (localData.history) {
+            localData.history.forEach(function(h) {
+                var pIds = [];
+                if (h.players) pIds = h.players;
+                else if (h.t1 && h.t2) pIds = h.t1.concat(h.t2);
+                pIds.forEach(function(id) { if (counts[id] !== undefined) counts[id]++; });
+            });
+        }
+        return counts;
+    }
+
+    // === 6. UI 渲染 (包含計時器修正) ===
+    window.renderUI = function() {
+      if(!localData || !localData.courts) return;
+      
+      var badge = document.getElementById('room-badge');
+      badge.className = localData.settings.isPublic ? 'badge badge-pub' : 'badge badge-pri';
+      badge.innerText = localData.settings.isPublic ? '🔓 公開' : '🔒 私人';
+
+      var banner = document.getElementById('round-over-banner');
+      if (localData.roundStatus === 'finished') banner.classList.remove('hidden');
+      else banner.classList.add('hidden');
+
+      document.getElementById('setting-win-score').value = localData.settings.winScore || 21;
+      document.getElementById('setting-score-val').innerText = localData.settings.winScore || 21;
+
+      var container = document.getElementById('courts-container');
+      container.innerHTML = '';
+      
+      localData.courts.forEach(function(court) {
+        var div = document.createElement('div');
+        div.className = 'card court-card ' + (court.status === 'playing' ? 'playing' : '');
+        
+        var headerHtml = '<div class="court-header"><span style="font-size:1.1rem">場地 #' + court.id + '</span>';
+        
+        // --- 計時器顯示 (重要) ---
+        if (localData.settings.timerEnabled && court.status === 'playing') {
+           var isRunning = (court.timer && court.timer.status === 'running');
+           var timeClass = isRunning ? 'timer-display' : 'timer-display paused';
+           var icon = isRunning ? '⏱' : '⏸';
+           
+           // 立即計算時間避免閃爍
+           var initTime = "00:00";
+           if(court.timer) {
+               var ms = court.timer.accumulated;
+               if(isRunning) ms += (Date.now() - court.timer.startAt);
+               var sec = Math.floor(Math.max(0, ms) / 1000);
+               var mm = Math.floor(sec / 60).toString().padStart(2, '0');
+               var ss = (sec % 60).toString().padStart(2, '0');
+               initTime = mm + ':' + ss;
+           }
+           
+           headerHtml += '<div class="' + timeClass + '" id="timer-court-' + court.id + '" onclick="toggleTimer(' + court.id + ')"><span style="margin-right:3px">' + icon + '</span><span class="time-text">' + initTime + '</span></div>';
+        } else {
+           headerHtml += '<span>' + (court.status === 'playing' ? '🟢 比賽中' : '⚪ 等待') + '</span>';
+        }
+        
+        headerHtml += '</div>';
+
+        var content = headerHtml;
+        if(court.status === 'playing') {
+          var pNames = court.players.map(function(pid) {
+            var p = localData.players.find(function(x){ return x.id === pid; });
+            return '<span class="dynamic-text">#' + pid + ' ' + (p?p.name:'?') + '</span>';
+          });
+          
+          var t1Name = '', t2Name = '';
+         if(localData.settings.mode === 'doubles' && pNames.length >= 4) {
+             // 修改：用 span 包住 & 符號
+             var amp = '<span class="ampersand">&</span>';
+             t1Name = pNames[0] + amp + pNames[1]; 
+             t2Name = pNames[2] + amp + pNames[3];
+          } else if (pNames.length >= 2) {
+             t1Name = pNames[0]; t2Name = pNames[1];
+          }
+
+          content += '<div class="matchup"><div style="color:var(--secondary)">' + t1Name + '</div><span class="vs">VS</span><div style="color:var(--danger)">' + t2Name + '</div></div>';
+
+          if(localData.settings.scoring) {
+             content += '<div class="score-board">' +
+                 '<div class="flex-col center"><button onclick="adjustScore(' + court.id + ', \'t1\', 1)">▲</button><div class="score-box dynamic-text">' + court.scores.t1 + '</div><button class="secondary" onclick="adjustScore(' + court.id + ', \'t1\', -1)">▼</button></div>' +
+                 '<div class="flex-col center"><button onclick="adjustScore(' + court.id + ', \'t2\', 1)">▲</button><div class="score-box dynamic-text">' + court.scores.t2 + '</div><button class="secondary" onclick="adjustScore(' + court.id + ', \'t2\', -1)">▼</button></div>' +
+               '</div>';
+          }
+          
+          content += '<div style="margin-top:15px; text-align:center;">';
+          if(localData.settings.recordStats) {
+              content += '<div class="flex" style="flex-direction:column; gap:5px;">';
+              content += '<button class="btn-win-t1" onclick="finishMatch(' + court.id + ', \'t1\')">🎉 藍方勝</button>';
+              content += '<button class="btn-win-t2" onclick="finishMatch(' + court.id + ', \'t2\')">🎉 紅方勝</button>';
+              content += '</div>';
+          } else {
+              content += '<button class="primary w-full" onclick="finishMatch(' + court.id + ', \'none\')">🏁 結束比賽</button>';
+          }
+          content += '</div>';
+        } else {
+          content += '<div class="center" style="height:100px; color:#999;">' + (localData.roundStatus === 'finished' ? '🚫 本輪結束' : '等待下一組...') + '</div>';
+        }
+        div.innerHTML = content;
+        container.appendChild(div);
+      });
+
+      renderStatusTab();
+      renderHistory();
+      
+      // 更新一次計時器
+      updateTimerDisplays();
+      
+      if(isAdminUnlocked) {
+         document.getElementById('setting-public-toggle').checked = localData.settings.isPublic;
+         document.getElementById('setting-record-stats-toggle').checked = localData.settings.recordStats;
+         document.getElementById('setting-scoring-toggle').checked = localData.settings.scoring;
+         document.getElementById('setting-timer-toggle').checked = localData.settings.timerEnabled;
+         document.getElementById('setting-win-score').value = localData.settings.winScore;
+         document.getElementById('setting-score-val').innerText = localData.settings.winScore;
+         document.getElementById('setting-court-count').value = localData.settings.courtCount;
+         document.getElementById('setting-pass-enabled').checked = localData.settings.passwordEnabled;
+         document.getElementById('setting-scope-reshuffle').checked = localData.settings.passwordScope.reshuffle;
+         document.getElementById('setting-scope-settings').checked = localData.settings.passwordScope.settings;
+         document.getElementById('setting-scope-close').checked = localData.settings.passwordScope.closeRoom;
+         renderPlayerMgmt();
+      }
+    };
+    
+    function renderStatusTab() {
+        var playingIds = [];
+        localData.courts.forEach(function(c) { c.players.forEach(function(p) { playingIds.push(p); }); });
+        
+        var waiting = [];
+        var tempIdx = localData.nextPlayerIndex || 0;
+        var total = localData.shuffledOrder.length;
+        var loopCount = 0;
+        while(waiting.length < 10 && loopCount < total) { 
+             var pid = localData.shuffledOrder[tempIdx % total];
+             if(playingIds.indexOf(pid) === -1 && waiting.indexOf(pid) === -1) waiting.push(pid);
+             tempIdx++; loopCount++;
+        }
+        
+        var buildHtml = function(ids) {
+           return ids.map(function(id) {
+             var p = localData.players.find(function(x){ return x.id === id; });
+             return '<div class="player-list-item"><span><span class="player-number">' + id + '</span> <span class="dynamic-text">' + (p?p.name:'Unknown') + '</span></span></div>';
+           }).join('');
+        };
+        document.getElementById('waiting-list').innerHTML = localData.roundStatus === 'finished' ? '<div style="padding:10px;text-align:center;color:#d32f2f;">需重排</div>' : buildHtml(waiting);
+        document.getElementById('playing-list').innerHTML = buildHtml(playingIds);
+        
+        var counts = calculateMatchCounts();
+        var allHtml = localData.players.map(function(p) {
+             var count = counts[p.id] || 0;
+             return '<div class="player-list-item">' + 
+                    '<span><span class="player-number">' + p.id + '</span> <span class="player-name dynamic-text">' + p.name + '</span></span>' +
+                    '<span class="play-count-badge">' + count + ' 場</span>' +
+                    '</div>';
+        }).join('');
+        document.getElementById('all-players-list').innerHTML = allHtml;
+    }
+
+    // === 7. 計時器核心 ===
+    window.toggleTimer = function(courtId) {
+       var newData = JSON.parse(JSON.stringify(localData));
+       var c = newData.courts.find(function(x){ return x.id === courtId; });
+       if (!c || !c.timer) return;
+       
+       if (c.timer.status === 'running') {
+           // 暫停
+           c.timer.accumulated += (Date.now() - c.timer.startAt);
+           c.timer.status = 'paused';
+       } else {
+           // 繼續
+           c.timer.startAt = Date.now();
+           c.timer.status = 'running';
+       }
+       
+       localData = newData; 
+       renderUI(); 
+       pushUpdate('timer_toggle', newData);
+    };
+
+    window.updateTimerDisplays = function() {
+       if (!localData || !localData.courts) return;
+       localData.courts.forEach(function(court) {
+           var display = document.querySelector('#timer-court-' + court.id + ' .time-text');
+           if (!display || !court.timer) return;
+           
+           var totalMs = court.timer.accumulated;
+           if (court.timer.status === 'running') {
+               var start = court.timer.startAt || Date.now();
+               totalMs += (Date.now() - start);
+           }
+           
+           var totalSec = Math.floor(Math.max(0, totalMs) / 1000);
+           var m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+           var s = (totalSec % 60).toString().padStart(2, '0');
+           display.innerText = m + ':' + s;
+       });
+    };
+    
+    // === 8. 其他功能 (Settings, Admin) ===
+    window.tryUnlockSettings = function() {
+        if(checkAuth('settings') === false) return alert("密碼錯誤");
+        isAdminUnlocked = true;
+        document.getElementById('btn-unlock-settings').classList.add('hidden');
+        document.getElementById('settings-panel').classList.remove('hidden');
+        renderUI();
+    };
+    window.renderPlayerMgmt = function() {
+      if(!document.getElementById('manage-player-list')) return;
+      document.getElementById('manage-player-list').innerHTML = localData.players.map(function(p) {
+        return '<div class="flex" style="justify-content:space-between; margin:5px 0; border-bottom:1px solid #eee;"><span>#' + p.id + ' ' + p.name + '</span><button class="danger small" onclick="removePlayer(' + p.id + ')">刪除</button></div>';
+      }).join('');
+    };
+    window.updateSetting = function(key, val) {
+       if(!isAdminUnlocked) return;
+       localData.settings[key] = val;
+       if(key === 'courtCount') {
+          while(localData.courts.length < val) localData.courts.push({id:localData.courts.length+1, status:'idle', players:[], scores:{t1:0,t2:0}, timer:{startAt:0,accumulated:0,status:'stopped'}});
+          if(localData.courts.length > val) localData.courts = localData.courts.slice(0, val);
+          runAllocationLogic(localData);
+       }
+       pushUpdate('setting_'+key, localData);
+    };
+    window.updatePassSettings = function() {
+        if(!isAdminUnlocked) return;
+        localData.settings.passwordEnabled = document.getElementById('setting-pass-enabled').checked;
+        localData.settings.passwordScope = {
+            reshuffle: document.getElementById('setting-scope-reshuffle').checked,
+            settings: document.getElementById('setting-scope-settings').checked,
+            closeRoom: document.getElementById('setting-scope-close').checked
+        };
+        pushUpdate('pass', localData);
+    };
+    window.togglePublicSetting = function(isPublic) {
+        if(!isAdminUnlocked) return;
+        if(isPublic) { if(!confirm("確定設為公開？")) { document.getElementById('setting-public-toggle').checked = false; return; } }
+        localData.settings.isPublic = isPublic;
+        pushUpdate('toggle_public', localData);
+    };
+    window.addPlayer = function() {
+        var name = document.getElementById('new-player-name').value;
+        if(!name) return;
+        var newId = localData.players.length > 0 ? Math.max.apply(null, localData.players.map(p=>p.id)) + 1 : 1;
+        localData.players.push({id:newId, name:name});
+        localData.shuffledOrder.push(newId);
+        document.getElementById('new-player-name').value = '';
+        pushUpdate('addPlayer', localData);
+    };
+    window.removePlayer = function(id) {
+        if(!confirm("確定移除?")) return;
+        localData.players = localData.players.filter(p=>p.id!==id);
+        localData.shuffledOrder = localData.shuffledOrder.filter(x=>x!==id);
+        localData.courts.forEach(c => { if(c.players.includes(id)) { c.status='idle'; c.players=[]; } });
+        pushUpdate('removePlayer', localData);
+    };
+    window.renderHistory = function() {
+       var list = document.getElementById('history-list');
+       if(localData.history.length === 0) { list.innerHTML = '<div style="padding:20px;text-align:center;color:#999">無紀錄</div>'; return; }
+       list.innerHTML = localData.history.slice(-20).reverse().map(function(rec){
+           var wColor = 'color:var(--primary); font-weight:bold;';
+           var namesT1 = "", namesT2 = "";
+           if(rec.players) {
+                var p = rec.players.map(id => (localData.players.find(x=>x.id==id)||{}).name || id);
+                if(p.length>=4) { namesT1=p[0]+" & "+p[1]; namesT2=p[2]+" & "+p[3]; }
+                else if(p.length>=2) { namesT1=p[0]; namesT2=p[1]; }
+           } else {
+               namesT1 = rec.t1.map(id=>(localData.players.find(p=>p.id===id)||{}).name || id).join(' & ');
+               namesT2 = rec.t2.map(id=>(localData.players.find(p=>p.id===id)||{}).name || id).join(' & ');
+           }
+           
+           return '<div class="card" style="padding:10px;">' +
+             '<div style="font-size:0.8rem;color:#999">' + new Date(rec.time).toLocaleTimeString() + ' ⏱ ' + (rec.durationStr||'--') + '</div>' +
+             '<div style="display:flex;justify-content:space-between;">' +
+               '<span style="' + (rec.winner==='t1'?wColor:'') + '">' + namesT1 + '</span>' +
+               '<span style="background:#eee;padding:0 5px;border-radius:4px">' + rec.scoreStr + '</span>' +
+               '<span style="' + (rec.winner==='t2'?wColor:'') + '">' + namesT2 + '</span>' +
+             '</div></div>';
+       }).join('');
+    };
+    window.handleSecretClick = function() {
+       secretClicks++;
+       if(secretClicks >= 5) { secretClicks=0; document.getElementById('page-home').classList.add('hidden'); document.getElementById('page-admin-login').classList.remove('hidden'); }
+    };
+    window.adminLogin = function() {
+        var u = document.getElementById('admin-user').value, p = document.getElementById('admin-pass').value;
+        showLoading(true);
+        google.script.run.withSuccessHandler(function(rooms){
+            showLoading(false); adminCredentials={u:u,p:p};
+            document.getElementById('page-admin-login').classList.add('hidden');
+            document.getElementById('page-admin-dash').classList.remove('hidden');
+            renderAdminRooms(rooms);
+        }).getAllRoomsAdmin(u,p);
+    };
+    window.renderAdminRooms = function(rooms) {
+        var div = document.getElementById('admin-room-list');
+        if(!rooms.length) { div.innerHTML="<p>無房間</p>"; return; }
+        div.innerHTML = rooms.map(function(r) {
+            var rid = r.roomId || r.id; 
+            var isPub = r.settings && r.settings.isPublic;
+            return '<div class="card"><div class="flex" style="justify-content:space-between"><strong>' + rid + '</strong>' + (isPub ? '<span class="badge badge-pub">公開</span>' : '<span class="badge badge-pri">私人</span>') + '</div><div>密碼: ' + r.password + '</div><div style="margin-top:10px;"><button onclick="adminJoin(\''+rid+'\')">加入</button><button class="danger" onclick="adminDelete(\''+rid+'\')">刪除</button></div></div>';
+        }).join('');
+    };
+    window.adminJoin = function(id) { currentRoomCode=id; document.getElementById('page-admin-dash').classList.add('hidden'); startApp(); };
+    window.adminDelete = function(id) { if(confirm("強制刪除?")) google.script.run.withSuccessHandler(()=>adminLogin()).forceDeleteRoom(id, adminCredentials.u, adminCredentials.p); };
+   //本設計版權由Ray Wang所有 請尊重著作權 請勿抄襲 
+  </script>
+</body>
+</html>
