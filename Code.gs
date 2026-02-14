@@ -118,3 +118,8 @@ function forceDeleteRoom(roomId, user, pass) {
   return { success: true };
 }
    //本設計版權由Ray Wang所有 請尊重著作權 請勿抄襲 
+/*
+ © 2026 HoneyCatRay
+ All rights reserved.
+ Unauthorized copying or redistribution prohibited.
+*/
