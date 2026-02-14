@@ -49,3 +49,65 @@
   **電子郵件:honeycat2013ray@gmail.com
   **個人網站**：[https://sites.google.com/view/honeycatray]
 ---
+
+Badminton Online Grouping System Pro
+
+An online badminton player grouping and court management system, supporting singles/doubles modes, public or private rooms, and providing match records, scoring, and timers.
+
+Features
+
+🏸 Singles / Doubles Mode: Automatically assign players to courts
+
+🌐 Public / Private Rooms: Choose whether to display in the lobby
+
+⏱ Timer & Score: Automatically track each match
+
+📊 Win/Loss Records: Keep historical match data
+
+🔄 Quick Reassign: Reallocate players with one click
+
+👥 Player Management: Add/remove players and set participation permissions
+
+🔐 Password Protection: Manage operations with password settings
+
+🎨 Custom Font Size & Visual Styles
+
+Project Files
+File	Description
+Code.gs	Google Apps Script backend logic (room data management, synchronization)
+index.html	Frontend page (homepage, lobby, rooms, admin panel)
+Deployment (Google Apps Script)
+
+Open Google Apps Script
+.
+
+Create a new project.
+
+Upload files:
+
+Code.gs → GAS script
+
+index.html → HTML frontend
+
+Click Deploy → New Deployment → Web App.
+
+Set execution permissions and access (e.g., “Anyone” or “Only myself”).
+
+After deployment, access the online features via the provided URL.
+
+License & Usage
+
+Licensed under CC BY-NC 4.0, for personal use and demonstration only, commercial use prohibited.
+
+Please retain author information when using: Ray Wang
+
+Author: Ray Wang (WANG CHANG-RUEI)
+More info: CC BY-NC 4.0
+
+Contact
+
+Author: Ray Wang
+
+Email: honeycat2013ray@gmail.com
+
+Website: https://sites.google.com/view/honeycatray
